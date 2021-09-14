@@ -1,0 +1,79 @@
+id: payment
+description: payment example
+functions:
+  - id: fn
+    type: reusable
+    image: gerke74/payment:v1
+start:
+  # listen for order placed (proceed)
+  # or listen for shipping failed (reverse)
+  type: eventsXor
+  events:
+    - type: io.direktiv.order.placed
+    - type: io.direktiv.shipping.failed
+states:
+  # switch between events. this is only required if
+  # there should be only one flow handling it.
+  # alternativley two workflows listening for one event
+  # can be used
+  - id: decision
+    type: switch
+    log: 'jq(.)'
+    conditions:
+    - condition: 'jq(."io.direktiv.order.placed")'
+      transition: make-payment
+      transform: 'jq(."io.direktiv.order.placed".data.details)'
+    defaultTransition: undo-payment
+  # calling "make-payment" function, retrying if it fails
+  # in a real scenario, the error should be caught as well
+  - id: make-payment
+    type: action
+    action:
+      function: fn
+      input: 'jq(.)'
+      retries:
+        max_attempts: 5
+        codes: [".*"]
+    transition: handle-result
+  # handle result of the payment call
+  - id: handle-result
+    type: switch
+    conditions:
+    - condition: 'jq(.return.result == false)'
+      transition: handle-declined
+    defaultTransition: handle-approved
+  # payment approved generates an event for shipping flow
+  - id: handle-approved
+    type: generateEvent
+    event:
+      type: io.direktiv.payment.processed
+      source: /direktiv/payment
+      data:
+        details: 'jq(.)'
+  # payment declined generates an event for order
+  - id: handle-declined
+    type: generateEvent
+    event:
+      type: io.direktiv.order.result
+      source: /direktiv/payment
+      context:
+        transaction: 'jq(.transaction)'
+      data:
+        result: 'jq(.return.result)'
+        msg: 'payment declined'
+  # undo payment if shipping fails
+  - id: undo-payment
+    type: action
+    action:
+      function: fn
+      input: 'jq(."io.direktiv.shipping.failed".data.details + { action: "undo" } )'
+    transition: publish-to-order
+  # publish failed shipping event to order
+  - id: publish-to-order
+    type: generateEvent
+    event:
+      type: io.direktiv.order.result
+      source: /direktiv/payment
+      context:
+        transaction: 'jq(."io.direktiv.shipping.failed".data.details.transaction)'
+      data: jq(."io.direktiv.shipping.failed".data.return)

@@ -1,0 +1,65 @@
+id: order
+description: simple order service
+functions:
+  - id: genid
+    type: reusable
+    image: vorteil/gen-pw:v1
+states:
+  # check input for this service via json schema
+  - id: validate-input
+    log: 'jq(.)'
+    type: validate
+    schema:
+      type: object
+      required:
+      - order
+      - customer
+      properties:
+        customer:
+          type: string
+        order:
+          type: array
+          items:
+            required:
+            - productID
+            - quantity
+            type: object
+            properties:
+              productID:
+                type: number
+              quantity:
+                type: number
+    transition: transaction
+  # generate a transaction id for this order
+  - id: transaction
+    type: action
+    action:
+      function: genid
+      input:
+        length: 10
+    transition: kickoff-credit-check
+    transform: 'jq(. + { transaction: .return.password } | del(.return) )'
+  # publish credit check event
+  - id: kickoff-credit-check
+    type: generateEvent
+    log: jq(.)
+    event:
+      type: io.direktiv.order.placed
+      source: /direktiv/order
+      data:
+        details: 'jq(.)'
+    transition: wait-for-result
+  # wait for the result
+  - id: wait-for-result
+    type: consumeEvent
+    timeout: PT1M
+    event:
+      type: io.direktiv.order.result
+      context:
+        transaction: 'jq(.transaction)'
+    log: 'waiting for transaction: jq(.transaction)'
+    transition: respond
+  # modify result for client
+  - id: respond
+    type: noop
+    transform: 'jq(."io.direktiv.order.result".data)'

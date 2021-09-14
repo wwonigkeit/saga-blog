@@ -1,0 +1,8 @@
+github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
+github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
+github.com/vorteil/direktiv-apps/pkg v0.0.0-20210825022100-9482014c3758 h1:Iw8V9QchHJ81nXZ+9569a5An5flc1Elm2vjLpKBYkwY=
+github.com/vorteil/direktiv-apps/pkg v0.0.0-20210825022100-9482014c3758/go.mod h1:VChd1dPyFTsapvTek20mvTGx8uda62ZL5lJTlJc+NbI=
+github.com/vorteil/direktiv-apps/pkg v0.0.0-20210830031102-e6888ee77fde h1:UV7HJqzNGGWOE2353tyT/3VRfCmSjxB2XGnYbpg2O3w=
+github.com/vorteil/direktiv-apps/pkg v0.0.0-20210830031102-e6888ee77fde/go.mod h1:VChd1dPyFTsapvTek20mvTGx8uda62ZL5lJTlJc+NbI=
+github.com/vorteil/direktiv-apps/pkg v0.0.0-20210901060323-d19fc681757d h1:qLvBN+wsUYqF7vqbqdCech2MwEsqL2UGH1/523AleyY=
+github.com/vorteil/direktiv-apps/pkg v0.0.0-20210901060323-d19fc681757d/go.mod h1:VChd1dPyFTsapvTek20mvTGx8uda62ZL5lJTlJc+NbI=

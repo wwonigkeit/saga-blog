@@ -1,0 +1,52 @@
+id: shipping
+description: shipping example
+functions:
+  - id: shipping
+    type: reusable
+    image: gerke74/shipping:v1
+start:
+  # waiting for payment confirmation
+  type: event
+  event:
+    type: io.direktiv.payment.processed
+states:
+  # call shipping function
+  - id: make-shipping
+    type: action
+    action:
+      function: shipping
+      input: 'jq(."io.direktiv.payment.processed".data.details | del(.return))'
+    transition: handle-shipping-result
+  # handle result. simple true/false in the return message of the shipping function
+  - id: handle-shipping-result
+    type: switch
+    conditions:
+    - condition: 'jq(.return == true)'
+      transition: publish-success
+    defaultTransition: publish-failure
+  # publish success to order flow
+  - id: publish-success
+    type: generateEvent
+    event:
+      type: io.direktiv.order.result
+      source: /direktiv/shipping
+      context:
+        transaction: 'jq(."io.direktiv.payment.processed".data.details.transaction)'
+      data:
+        result: true
+        msg: "products shipped"
+  # publish failure to payment flow to undo payment
+  # payment will make a subsequent call to order with the shipping error
+  - id: publish-failure
+    type: generateEvent
+    event:
+      type: io.direktiv.shipping.failed
+      source: /direktiv/shipping
+      data:
+         details: 'jq(."io.direktiv.payment.processed".data.details | del(.return))'
+         return:
+           result: false
+           msg: "shipping failed"
+
+
+        
